@@ -67,11 +67,44 @@ void _print_environment()
 				cache_size);
 	}
 }
+void print_statistics(double costw, double costr, int writeper, int readper, long int count){
+	int readnum = (readper*count)/100;
+	int writenum = (writeper*count)/100;
+	printf(LINE);
+	printf("Number Of Requests:%ld\n", count);
+	printf("Number of Writes(%d%% of total number of requests):%d\n", writeper, writenum); 
+	printf("|Random-Write	(done:%d): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+		,writenum,
+		writenum /(double) costw, 
+		writenum /(double) costw, 
+		costw);
+	printf("Number of Reads(%d%% of total number of requests):%d\n", readper, writeper); 	
+	printf("|Random-Read	(done:%d): %.6f sec/op; %.1f reads /sec(estimated); cost:%.3f(sec)\n",
+		readnum,
+		readnum /(double) costr, 
+		readnum /(double) costr,  
+		costr); 
+}		
 
+
+void* my_write_test(void* arg);
+void* my_read_test(void* arg);
+
+
+struct kiwi_str{
+	long int count;
+	int r;
+};	
+	
 int main(int argc,char** argv)
 {
-	long int count;
-	int writenum, readnum;
+	//long int count;
+	//int writeper, readper;
+	//double costw, costr;
+	struct kiwi_str *dw, *dr;
+	pthread_t write1;
+	pthread_t read1;
+	
 
 	srand(time(NULL));
 	if (argc < 3) {
@@ -80,43 +113,46 @@ int main(int argc,char** argv)
 	}
 	
 	if (strcmp(argv[1], "write") == 0) {
-		int r = 0;
-
-		count = atoi(argv[2]);
-		_print_header(count);
+		//int r = 0;
+		dw = (struct kiwi_str*) malloc(sizeof(struct kiwi_str));
+		dw->count = atoi(argv[2]);
+		_print_header(dw->count);
 		_print_environment();
 		if (argc == 4)
-			r = 1;
-		_write_test(count, r);
+			dw->r = 1;
+		pthread_create(&write1, NULL, my_write_test, (void*) dw);
+    		pthread_join(write1, NULL);	
 	} else if (strcmp(argv[1], "read") == 0) {
-		int r = 0;
-
-		count = atoi(argv[2]);
-		_print_header(count);
+		//int r = 0;
+		dr = (struct kiwi_str*) malloc(sizeof(struct kiwi_str));
+		dr->count = atoi(argv[2]);
+		_print_header(dr->count);
 		_print_environment();
 		if (argc == 4)
-			r = 1;
-		
-		_read_test(count, r);
-	}else if(strcmp(argv[1], "readwrite") == 0){
+			dr->r = 1;
+		pthread_create(&read1, NULL, my_read_test, (void*) dr);
+		pthread_join(read1,NULL);
+	}/*else if(strcmp(argv[1], "readwrite") == 0){
 		int r = 0;
 		if(argc<5){
-			fprintf(stderr,"Usage: db-bench <readwrite> <count> <numberofwrites> <numberofreads>\n");
+			fprintf(stderr,"Usage: db-bench <readwrite> <count> <percentageofwrites> <ofreads> <r>\n");
 			exit(1);
 		}
 		count = atoi(argv[2]);
-		writenum = atoi(argv[3]);
-		readnum = atoi(argv[4]);
+		writeper = atoi(argv[3]);
+		readper = atoi(argv[4]);
 		_print_header(count); 
 		_print_environment();
 		if (argc == 6){
 			r = 1;
 		}
-		//my_write_test(count, r, writenum);
+		costw = my_write_test(count, r, writeper);
 		_print_header(count); 
 		_print_environment();
-		my_read_test(count, r, readnum);
-	 }else {
+		costr = my_read_test(count, r, readper);
+		print_statistics(costw, costr, writeper, readper, count); 
+		_readwrite_test(count, r, writeper, readper);	*/	
+	 else {
 		fprintf(stderr,"Usage: db-bench <write | read | readwrite> <count> <random>\n");
 		exit(1);
 	}
