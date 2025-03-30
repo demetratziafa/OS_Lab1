@@ -73,16 +73,18 @@ struct kiwi_str{
 	long int count;
 	int r;
 	int per;
+	long long start, end;
 };
+
 
 void * my_write_test(void *arg);
 void * my_read_test(void *arg);
+void print_statistics(char * mode, void* arg1);
 
 int main(int argc,char** argv)
 {
-	//long int count;
-	struct kiwi_str *wr, *re;
 
+	struct kiwi_str *wr, *re;
 	srand(time(NULL));
 	if (argc < 3) {
 		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
@@ -91,18 +93,19 @@ int main(int argc,char** argv)
 	
 	if (strcmp(argv[1], "write") == 0) {
 		wr = (struct kiwi_str*)malloc(sizeof(struct kiwi_str));
-		
 		wr->count = atoi(argv[2]);
 		_print_header(wr->count);
 		_print_environment();
 		if (argc == 4)
 			wr->r = 1;
 		if(argc == 5){
-			wr->per = atoi(argv[4]);	
+			wr->per = atoi(argv[4]);
+
 		}else{
 			wr->per = 0;
 		}	
 		my_write_test(wr);
+		print_statistics(argv[1],wr);
 	} else if (strcmp(argv[1], "read") == 0) {
 		re = (struct kiwi_str*)malloc(sizeof(struct kiwi_str));
 		re->count = atoi(argv[2]);
@@ -116,7 +119,34 @@ int main(int argc,char** argv)
 			re->per = 0;
 		}	
 		my_read_test(re);
-	} else {
+		print_statistics(argv[1],re);
+	}/*else if(strcmp(argv[1], "readwrite") == 0){
+		wr = (struct kiwi_str*)malloc(sizeof(struct kiwi_str));
+		re = (struct kiwi_str*)malloc(sizeof(struct kiwi_str));
+		if(argc<5){
+			fprintf(stderr,"Usage: db-bench <readwrite> <count> <r> <percentageofwrites> <percentageofreads>\n");
+			exit(1);
+		}
+		wr->count = atoi(argv[2]);
+		re->count = atoi(argv[2]);
+		_print_header(wr->count);
+		_print_environment();
+		if (argc == 6){
+			wr->r = 1;
+			re->r = 1;
+			wr->per = atoi(argv[4]);
+			re->per = atoi(argv[5]);
+			
+		}else if(argc == 5){
+			wr->r = 0;
+			wr->r = 0;
+			wr->per = atoi(argv[3]);
+			re->per = atoi(argv[4]);
+			}		
+		my_write_test(wr);
+		my_read_test(re); */
+		
+	 else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 		exit(1);
 	}

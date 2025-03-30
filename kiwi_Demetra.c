@@ -119,15 +119,60 @@ struct kiwi_str{
 	long int count;
 	int r;
 	int per;
+	long long start, end;
 };
 
+	
+void print_statistics(char * mode, void* arg1){
+	
+	struct kiwi_str *rw = (struct kiwi_str*)arg1;
+	long int countwr;
+	double cost = rw->end - rw->start;
+	
+	if(strcmp(mode,"write")==0){
+		printf(LINE);
+		printf("Write Statistics\n");
+		if(rw->per == 0){
+			printf("Total Number of Writes:%ld\n", rw->count);
+			printf("%.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+			,cost /(double) rw->count
+			,rw->count /(double) cost
+			,cost); 
+		}else{
+			countwr = (rw->per)*(rw->count)/100;
+			printf("Total Number of Writes:%ld\n", rw->count);
+			printf("%d%% of the total number of writes added:%ld\n", rw->per, countwr);
+			printf("%.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+			,cost /(double) countwr
+			,countwr /(double) cost
+			,cost); 	
+		}				
+	}else if(strcmp(mode,"read")==0){
+		printf(LINE);
+		printf("Read Statistics\n");
+		if(rw->per == 0){
+			printf("Total Number of Reads:%ld\n", rw->count);
+			printf("%.6f sec/op; %.1f reads/sec(estimated); cost:%.3f(sec);\n"
+			,cost /(double) rw->count
+			,rw->count /(double) cost
+			,cost); 
+		}else{
+			countwr = (rw->per)*(rw->count)/100;
+			printf("Total Number of Reads:%ld\n", rw->count);
+			printf("%d%% of the total number of reads read:%ld\n", rw->per, countwr);
+			printf("%.6f sec/op; %.1f reads/sec(estimated); cost:%.3f(sec);\n"
+			,cost /(double) countwr
+			,countwr /(double) cost
+			,cost); 	
+		}				
+	}
+}				
+		
 
 void * my_write_test(void *arg)
 {
 	struct kiwi_str *wr = (struct kiwi_str*)arg;
 	int i;
-	double cost;
-	long long start,end;
 	Variant sk, sv;
 	DB* db;
 
@@ -148,7 +193,7 @@ void * my_write_test(void *arg)
 	}		
 		
 
-	start = get_ustime_sec();
+	wr->start = get_ustime_sec();
 	for (i = 0; i < countw; i++) {
 		if (wr->r)
 			_random_key(key, KSIZE);
@@ -174,14 +219,7 @@ void * my_write_test(void *arg)
 
 	db_close(db);
 
-	end = get_ustime_sec();
-	cost = end -start;
-
-	printf(LINE);
-	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-		,countw, cost /(double) countw
-		,countw /(double) cost
-		,cost);	
+	wr->end = get_ustime_sec();
 	return NULL;	
 }
 
@@ -191,8 +229,6 @@ void * my_read_test(void *arg)
 	int i;
 	int ret;
 	int found = 0;
-	double cost;
-	long long start,end;
 	Variant sk;
 	Variant sv;
 	DB* db;
@@ -205,7 +241,7 @@ void * my_read_test(void *arg)
 	}else{
 		countr = (re->per)*(re->count)/100;
 	}
-	start = get_ustime_sec();
+	re->start = get_ustime_sec();
 	for (i = 0; i < countr; i++) {
 		memset(key, 0, KSIZE + 1);
 
@@ -237,14 +273,7 @@ void * my_read_test(void *arg)
 
 	db_close(db);
 
-	end = get_ustime_sec();
-	cost = end - start;
-	printf(LINE);
-	printf("|Random-Read	(done:%ld, found:%d): %.6f sec/op; %.1f reads /sec(estimated); cost:%.3f(sec)\n",
-		countr, found,
-		cost /(double) countr,
-		countr /(double) cost,
-		cost);
+	re->end = get_ustime_sec();
 	return NULL;	
 }
 
