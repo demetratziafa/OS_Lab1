@@ -5,6 +5,9 @@
 #include "utils.h"
 #include "log.h"
 
+//our mutex
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 DB* db_open_ex(const char* basedir, uint64_t cache_size)
 {
     DB* self = calloc(1, sizeof(DB));
@@ -46,6 +49,7 @@ void db_close(DB *self)
 
 int db_add(DB* self, Variant* key, Variant* value)
 {
+     pthread_mutex_lock(&mutex); //kleidoma krisimis perioxis
     if (memtable_needs_compaction(self->memtable))
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
@@ -53,16 +57,31 @@ int db_add(DB* self, Variant* key, Variant* value)
         sst_merge(self->sst, self->memtable);
         memtable_reset(self->memtable);
     }
-
-    return memtable_add(self->memtable, key, value);
+     while(pthread_mutex_trylock(&self->sst->cv_lock) == EBUSY){ //oso to mutex cv_lock tis merge_thread, min kaneis kati
+	  ;
+        }
+        pthread_mutex_unlock(&self->sst->cv_lock); //xekleidoma mutex cv_lock otan den ginetai merging
+    }
+	
+    //topothetisi tis memtable_add stin krisimi perioxi
+    int res = memtable_add(self->memtable, key, value); //skopos: min ginetai taytoxrona prosthiki neon stoixeion kai anagnosi apo tin db_get 
+    pthread_mutex_unlock(&mutex); //xekleidoma krisimis perioxis
+    
+    return res; //epistrefetai i timi tis memtable_add meso tis res meta tin exodo apo tin kp
 }
 
 int db_get(DB* self, Variant* key, Variant* value)
 {
+     pthread_mutex_lock(&mutex); //kleidoma krisimis perioxis
     if (memtable_get(self->memtable->list, key, value) == 1)
-        return 1;
-
-    return sst_get(self->sst, key, value);
+    	 pthread_mutex_unlock(&mutex); //topothetisi enos extra unlock se periptosi poy ginei true i sinthiki kai minei klidomeni i kp ti db_get
+        return 1;   
+ 	
+     //topothetisi tis sst_get stin krisimi perioxi	
+     int res = sst_get(self->sst, key, value); //skopos:min ginetai taytoxrona anagnosi stoixeion sto sst kai merging toy memtable me to disko 
+     pthread_mutex_unlock(&mutex); //xekleidoma krisimis perioxis 
+     
+    return res; //epistrefetai i timi tis sst_get meso tis res meta tin exodo apo tin kp
 }
 
 int db_remove(DB* self, Variant* key)
