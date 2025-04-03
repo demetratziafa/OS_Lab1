@@ -67,95 +67,112 @@ void _print_environment()
 				cache_size);
 	}
 }
-void print_statistics(double costw, double costr, int writeper, int readper, long int count){
-	int readnum = (readper*count)/100;
-	int writenum = (writeper*count)/100;
-	printf(LINE);
-	printf("Number Of Requests:%ld\n", count);
-	printf("Number of Writes(%d%% of total number of requests):%d\n", writeper, writenum); 
-	printf("|Random-Write	(done:%d): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-		,writenum,
-		writenum /(double) costw, 
-		writenum /(double) costw, 
-		costw);
-	printf("Number of Reads(%d%% of total number of requests):%d\n", readper, writeper); 	
-	printf("|Random-Read	(done:%d): %.6f sec/op; %.1f reads /sec(estimated); cost:%.3f(sec)\n",
-		readnum,
-		readnum /(double) costr, 
-		readnum /(double) costr,  
-		costr); 
-}		
+//me ta structs 
+			 
+struct kiwi_write{
 
-
-void* my_write_test(void* arg);
-void* my_read_test(void* arg);
-
-
-struct kiwi_str{
 	long int count;
 	int r;
-};	
+	DB* db;
+
+};
+
+
+struct kiwi_read{
+
+	long int count;
+	int r;
+	DB* db;
 	
+};
+
+
+void * my_write_test(void *arg); //me
+void * my_read_test(void *arg); //me
+void print_statistics(char * mode, double cost, void* arg1); //me
+
 int main(int argc,char** argv)
 {
-	//long int count;
-	//int writeper, readper;
-	//double costw, costr;
-	struct kiwi_str *dw, *dr;
-	pthread_t write1;
-	pthread_t read1;
-	
-
+	long long start,end; //me
+	double cost; //me
+	struct kiwi_write *wr = (struct kiwi_write*)malloc(sizeof(struct kiwi_write)); //me
 	srand(time(NULL));
 	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <write | read | readwrite>  <count>\n");
+		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
 		exit(1);
 	}
 	
 	if (strcmp(argv[1], "write") == 0) {
-		//int r = 0;
-		dw = (struct kiwi_str*) malloc(sizeof(struct kiwi_str));
-		dw->count = atoi(argv[2]);
-		_print_header(dw->count);
+		start = get_ustime_sec();  //me
+		wr->count = atoi(argv[2]); //me
+		wr->db = db_open(DATAS); //me
+		_print_header(wr->count);
 		_print_environment();
-		if (argc == 4)
-			dw->r = 1;
-		pthread_create(&write1, NULL, my_write_test, (void*) dw);
-    		pthread_join(write1, NULL);	
+		if (argc == 4){
+			wr->r = 1;
+		}		
+		my_write_test(wr); //me
+		db_close(wr->db); //me
+		end = get_ustime_sec(); //me
+		cost = end - start;//me
+		print_statistics("write", cost, wr); //me
 	} else if (strcmp(argv[1], "read") == 0) {
-		//int r = 0;
-		dr = (struct kiwi_str*) malloc(sizeof(struct kiwi_str));
-		dr->count = atoi(argv[2]);
-		_print_header(dr->count);
+		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read)); //me
+		start = get_ustime_sec(); //me
+		re->count = atoi(argv[2]); //me
+		re->db = db_open(DATAS); //me
+		_print_header(re->count);
 		_print_environment();
 		if (argc == 4)
-			dr->r = 1;
-		pthread_create(&read1, NULL, my_read_test, (void*) dr);
-		pthread_join(read1,NULL);
-	}/*else if(strcmp(argv[1], "readwrite") == 0){
-		int r = 0;
-		if(argc<5){
-			fprintf(stderr,"Usage: db-bench <readwrite> <count> <percentageofwrites> <ofreads> <r>\n");
+			re->r = 1;	
+		my_read_test(re); 
+		db_close(re->db); //me
+		end = get_ustime_sec(); //me
+		cost = end - start; //me
+		print_statistics("read", cost, re); //me
+		
+		
+	} else if(strcmp(argv[1], "readwrite") == 0){ //apo edo kai kato //me
+	
+
+		if(argc<4){
+			fprintf(stderr,"Usage: db-bench <readwrite> <count> <percentageofwrites> <percentageofreads>\n");
 			exit(1);
 		}
-		count = atoi(argv[2]);
-		writeper = atoi(argv[3]);
-		readper = atoi(argv[4]);
-		_print_header(count); 
+		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read));
+		wr->r = 0;
+		re->r = 0;
+		int writeper = atoi(argv[3]);
+		int readper = atoi(argv[4]);
+		
+		
+		DB* db = db_open(DATAS);
+    		wr->db = db;
+    		re->db = db;
+		long long count = atol(argv[2]);
+		wr->count = (writeper*count)/100;
+		re-> count = (readper*count)/100; 
+		_print_header(count);
 		_print_environment();
-		if (argc == 6){
-			r = 1;
-		}
-		costw = my_write_test(count, r, writeper);
-		_print_header(count); 
-		_print_environment();
-		costr = my_read_test(count, r, readper);
-		print_statistics(costw, costr, writeper, readper, count); 
-		_readwrite_test(count, r, writeper, readper);	*/	
-	 else {
-		fprintf(stderr,"Usage: db-bench <write | read | readwrite> <count> <random>\n");
-		exit(1);
-	}
+		
+		pthread_t write;
+		pthread_t read;
 
-	return 1;
+
+		pthread_create(&write, NULL, my_write_test, (void*) wr);
+		pthread_create(&read, NULL, my_read_test, (void*) re);
+
+		pthread_join(write, NULL);
+		pthread_join(read, NULL);
+		
+		db_close(re->db);
+		free(wr);
+		free(re);
+		
+	 }else {
+		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
+		exit(1);
+          }
+
+	return 0;
 }
