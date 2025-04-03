@@ -115,7 +115,7 @@ void _read_test(long int count, int r)
 }
 
 
-//me apo edo kai kato
+//me a
 struct kiwi_write{
 
 	long int count;
@@ -134,7 +134,7 @@ struct kiwi_read{
 };
 
 	
-void print_statistics(char * mode, double cost, void* arg1){
+void print_statistics(char * mode, double cost, void* arg1,int wp, int rp){
 	 
 	
 	if(strcmp(mode,"write")==0){
@@ -145,17 +145,9 @@ void print_statistics(char * mode, double cost, void* arg1){
 		printf("%.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
 			,cost /(double) wr->count
 			,wr->count /(double) cost
-			,cost); 
-		}/*else{
-			countwr = (rw->per)*(rw->count)/100;
-			printf("Total Number of Writes:%ld\n", rw->count);
-			printf("%d%% of the total number of writes added:%ld\n", rw->per, countwr);
-			printf("%.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-			,cost /(double) countwr
-			,countwr /(double) cost
-			,cost); */	
-						
-	else if(strcmp(mode,"read")==0){
+			,cost); 	
+				
+	}else if(strcmp(mode,"read")==0){
 		struct kiwi_read *re = (struct kiwi_read*)arg1;
 		printf(LINE);
 		printf("Read Statistics\n");	
@@ -164,17 +156,27 @@ void print_statistics(char * mode, double cost, void* arg1){
 			,cost /(double) re->count
 			,re->count /(double) cost
 			,cost); 
-		}/*else if((strcmp(mode,"read")==0){
-			printf("Total Number of Reads:%ld\n", rw->count);
-			printf("%d%% of the total number of reads read:%ld\n", rw->per, countwr);
-			printf("%.6f sec/op; %.1f reads/sec(estimated); cost:%.3f(sec);\n"
-			,cost /(double) countwr
-			,countwr /(double) cost
-			,cost); 	
+	}else if(strcmp(mode,"readwrite")==0){
+		struct kiwi_write *rw = (struct kiwi_write*)arg1;
+		double rper = (rp*(rw->count))/100;
+		double wper = (wp*(rw->count))/100;
+		printf("Read Statistics\n");
+		printf("Total Number of Reads:%f\n", rper);
+		printf("%d%% of the total number of reads read:%f\n",rp, rper);
+		printf("%.6f sec/op; %.1f reads/sec(estimated); cost:%.3f(sec);\n"
+		,cost /(double) rper
+		,rper /(double) cost
+		,cost); 
+		printf("Write Statistics\n");
+		printf("Total Number of Writes:%ld\n", rw->count);
+		printf("%d%% of the total number of reads read:%f\n",wp, wper);
+		printf("%.6f sec/op; %.1f reads/sec(estimated); cost:%.3f(sec);\n"
+		,cost /(double) wper
+		,wper /(double) cost
+		,cost); 	
 		}				
-	} */
-				
-}		
+} 
+					
 
 void * my_write_test(void *arg)
 {

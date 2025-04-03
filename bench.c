@@ -86,10 +86,10 @@ struct kiwi_read{
 	
 };
 
-
+//function prototypes
 void * my_write_test(void *arg); //me
 void * my_read_test(void *arg); //me
-void print_statistics(char * mode, double cost, void* arg1); //me
+void print_statistics(char * mode, double cost, void* arg1,int wp, int rp);
 
 int main(int argc,char** argv)
 {
@@ -115,7 +115,8 @@ int main(int argc,char** argv)
 		db_close(wr->db); //me
 		end = get_ustime_sec(); //me
 		cost = end - start;//me
-		print_statistics("write", cost, wr); //me
+		print_statistics("write", cost, wr,0,0); //me
+		free(wr);
 	} else if (strcmp(argv[1], "read") == 0) {
 		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read)); //me
 		start = get_ustime_sec(); //me
@@ -129,12 +130,13 @@ int main(int argc,char** argv)
 		db_close(re->db); //me
 		end = get_ustime_sec(); //me
 		cost = end - start; //me
-		print_statistics("read", cost, re); //me
+		print_statistics("read", cost, re,0,0); //me
+		free(re);
 		
 		
-	} else if(strcmp(argv[1], "readwrite") == 0){ //apo edo kai kato //me
+	} else if(strcmp(argv[1], "readwrite") == 0)
+	{ 
 	
-
 		if(argc<4){
 			fprintf(stderr,"Usage: db-bench <readwrite> <count> <percentageofwrites> <percentageofreads>\n");
 			exit(1);
@@ -156,21 +158,24 @@ int main(int argc,char** argv)
 		_print_environment();
 		
 		pthread_t write;
-		pthread_t read;
+		pthread_t read[2];
 
 
 		pthread_create(&write, NULL, my_write_test, (void*) wr);
-		pthread_create(&read, NULL, my_read_test, (void*) re);
-
+		for(int i=0;i<2;i++){
+			pthread_create(&read[i], NULL, my_read_test, (void*) re);
+		}
 		pthread_join(write, NULL);
-		pthread_join(read, NULL);
+		for(int i=0;i<2;i++){
+			pthread_join(read[i], NULL);
+		}
 		
 		db_close(re->db);
 		free(wr);
 		free(re);
 		
 	 }else {
-		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
+		fprintf(stderr,"Usage: db-bench <write | read> | <readwrite> <count> <random>\n");
 		exit(1);
           }
 
