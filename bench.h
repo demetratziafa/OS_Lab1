@@ -6,8 +6,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include "../engine/db.h" //me
-#define DATAS ("testdb")  //me
+#include "../engine/db.h" //aparaitita gia anoigma/klisimo vasis apo to bench.c
+#define DATAS ("testdb") 
 
 #define KSIZE (16)
 #define VSIZE (1000)

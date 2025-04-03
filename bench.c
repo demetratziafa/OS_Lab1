@@ -67,7 +67,8 @@ void _print_environment()
 				cache_size);
 	}
 }
-//me ta structs 
+
+//structs gia tis read,write orates gia ti main 
 			 
 struct kiwi_write{
 
@@ -87,15 +88,15 @@ struct kiwi_read{
 };
 
 //function prototypes
-void * my_write_test(void *arg); //me
-void * my_read_test(void *arg); //me
+void * my_write_test(void *arg); 
+void * my_read_test(void *arg); 
 void print_statistics(char * mode, double cost, void* arg1,int wp, int rp);
 
 int main(int argc,char** argv)
 {
-	long long start,end; //me
-	double cost; //me
-	struct kiwi_write *wr = (struct kiwi_write*)malloc(sizeof(struct kiwi_write)); //me
+	long long start,end; //prosthiki edo gia katametrisi ton statistikon logo toy open/close database
+	double cost; //prosthiki edo gia ta statistika
+	struct kiwi_write *wr = (struct kiwi_write*)malloc(sizeof(struct kiwi_write)); //global deiktis sto write struct logo toy enos grafea
 	srand(time(NULL));
 	if (argc < 3) {
 		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
@@ -103,57 +104,58 @@ int main(int argc,char** argv)
 	}
 	
 	if (strcmp(argv[1], "write") == 0) {
-		start = get_ustime_sec();  //me
-		wr->count = atoi(argv[2]); //me
-		wr->db = db_open(DATAS); //me
+		start = get_ustime_sec();  
+		wr->count = atoi(argv[2]); 
+		wr->db = db_open(DATAS); //anoigma vasis
 		_print_header(wr->count);
 		_print_environment();
 		if (argc == 4){
 			wr->r = 1;
 		}		
-		my_write_test(wr); //me
-		db_close(wr->db); //me
-		end = get_ustime_sec(); //me
-		cost = end - start;//me
-		print_statistics("write", cost, wr,0,0); //me
-		free(wr);
+		my_write_test(wr); //kleisi dikis mas write
+		db_close(wr->db); //anoigma vasis
+		end = get_ustime_sec(); 
+		cost = end - start;
+		print_statistics("write", cost, wr,0,0); //ektiposi statistikon apodosis
+		free(wr); //apodesmeusi mnimis
 	} else if (strcmp(argv[1], "read") == 0) {
-		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read)); //me
-		start = get_ustime_sec(); //me
-		re->count = atoi(argv[2]); //me
-		re->db = db_open(DATAS); //me
+		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read)); //deiktis sto read struct
+		start = get_ustime_sec(); 
+		re->count = atoi(argv[2]); 
+		re->db = db_open(DATAS); 
 		_print_header(re->count);
 		_print_environment();
 		if (argc == 4)
 			re->r = 1;	
-		my_read_test(re); 
-		db_close(re->db); //me
-		end = get_ustime_sec(); //me
-		cost = end - start; //me
-		print_statistics("read", cost, re,0,0); //me
-		free(re);
+		my_read_test(re); //kleisi dikis mas read
+		db_close(re->db); //kleisimo vasis
+		end = get_ustime_sec(); 
+		cost = end - start; 
+		print_statistics("read", cost, re,0,0); //ektiposi statistikon apodosis
+		free(re); //apodesmeusi mnimis
 		
 		
-	} else if(strcmp(argv[1], "readwrite") == 0)
+	} else if(strcmp(argv[1], "readwrite") == 0) //ilopoiisi mnimis
 	{ 
 	
 		if(argc<4){
 			fprintf(stderr,"Usage: db-bench <readwrite> <count> <percentageofwrites> <percentageofreads>\n");
-			exit(1);
+			exit(1); //minima se periptosi poy den dosei sosta args o user 
 		}
-		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read));
+		start = get_ustime_sec();
+		struct kiwi_read *re = (struct kiwi_read*)malloc(sizeof(struct kiwi_read)); //local deiktis sto read struct logo ton pollon grafeon
 		wr->r = 0;
 		re->r = 0;
-		int writeper = atoi(argv[3]);
-		int readper = atoi(argv[4]);
+		int writeper = atoi(argv[3]); //pososto gia write
+		int readper = atoi(argv[4]);  //pososto gia read
 		
 		
-		DB* db = db_open(DATAS);
+		DB* db = db_open(DATAS); //anoigma vasis
     		wr->db = db;
     		re->db = db;
 		long long count = atol(argv[2]);
-		wr->count = (writeper*count)/100;
-		re-> count = (readper*count)/100; 
+		wr->count = (writeper*count)/100; //airthmos eggrafon poy tha ektelesei i write
+		re-> count = (readper*count)/100;  //arithmos eggrafon poy tha ektelesei i read
 		_print_header(count);
 		_print_environment();
 		
@@ -161,16 +163,19 @@ int main(int argc,char** argv)
 		pthread_t read[2];
 
 
-		pthread_create(&write, NULL, my_write_test, (void*) wr);
+		pthread_create(&write, NULL, my_write_test, (void*) wr); //dimiourgia nimatos gia write
 		for(int i=0;i<2;i++){
-			pthread_create(&read[i], NULL, my_read_test, (void*) re);
+			pthread_create(&read[i], NULL, my_read_test, (void*) re); //dimioyrgia nimaton gia read
 		}
 		pthread_join(write, NULL);
 		for(int i=0;i<2;i++){
 			pthread_join(read[i], NULL);
 		}
 		
-		db_close(re->db);
+		db_close(re->db); //kleisimo vasis
+		end = get_ustime_sec(); 
+		cost = end - start; 
+		//print_statistics("readwrite", cost, re,writeper,readper);
 		free(wr);
 		free(re);
 		

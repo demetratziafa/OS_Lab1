@@ -115,7 +115,7 @@ void _read_test(long int count, int r)
 }
 
 
-//me a
+//structs ton pedion ton arxikon functions read kai write +deikti sto Db gia open/close database
 struct kiwi_write{
 
 	long int count;
@@ -133,7 +133,7 @@ struct kiwi_read{
 	
 };
 
-	
+//sinartisi ektiposis statistikon apodosis kathe leitoyrgias	
 void print_statistics(char * mode, double cost, void* arg1,int wp, int rp){
 	 
 	
@@ -180,7 +180,7 @@ void print_statistics(char * mode, double cost, void* arg1,int wp, int rp){
 
 void * my_write_test(void *arg)
 {
-	struct kiwi_write *wr = (struct kiwi_write*)arg;
+	struct kiwi_write *wr = (struct kiwi_write*)arg; //deiktis toy write struct
 	int i;
 	Variant sk, sv;
 
@@ -216,12 +216,12 @@ void * my_write_test(void *arg)
 		}
 	}
 
-	return NULL;	
+	return NULL; 
 }
 
 void * my_read_test(void *arg)
 {
-	struct kiwi_read *re = (struct kiwi_read*)arg;
+	struct kiwi_read *re = (struct kiwi_read*)arg; //deiktis toy read struct
 	int i;
 	int ret;
 	int found = 0;
