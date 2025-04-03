@@ -63,7 +63,7 @@ int db_add(DB* self, Variant* key, Variant* value)
         pthread_mutex_unlock(&self->sst->cv_lock); //xekleidoma mutex cv_lock otan den ginetai merging
     }
 	
-    //topothetisi tis memtable_add stin krisimi perioxi
+    //topothetisi tis memtable_add stin krisimi perioxi 
     int res = memtable_add(self->memtable, key, value); //skopos: min ginetai taytoxrona prosthiki neon stoixeion kai anagnosi apo tin db_get 
     pthread_mutex_unlock(&mutex); //xekleidoma krisimis perioxis
     
@@ -73,10 +73,10 @@ int db_add(DB* self, Variant* key, Variant* value)
 int db_get(DB* self, Variant* key, Variant* value)
 {
      pthread_mutex_lock(&mutex); //kleidoma krisimis perioxis
-    if (memtable_get(self->memtable->list, key, value) == 1)
+    if (memtable_get(self->memtable->list, key, value) == 1){
     	 pthread_mutex_unlock(&mutex); //topothetisi enos extra unlock se periptosi poy ginei true i sinthiki kai minei klidomeni i kp ti db_get
-        return 1;   
- 	
+         return 1;   
+     }		
      //topothetisi tis sst_get stin krisimi perioxi	
      int res = sst_get(self->sst, key, value); //skopos:min ginetai taytoxrona anagnosi stoixeion sto sst kai merging toy memtable me to disko 
      pthread_mutex_unlock(&mutex); //xekleidoma krisimis perioxis 
